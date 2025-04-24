@@ -77,7 +77,7 @@ model = dict(
         fusion_type='MultiBranchFusionAvg', # slighly better than w/o global avg feature
         dilations=[1, 3, 5],
         semantic_out_stride=4,
-        stage_num_classes=[80, 80, 80, 1],  # use class-agnostic classifier in the last stage
+        stage_num_classes=[4, 4, 4, 1],  # use class-agnostic classifier in the last stage
         stage_sup_size=[14, 28, 56, 112],
         pre_upsample_last_stage=False,      # compute logits and then upsample them in the last stage
         upsample_cfg=dict(type='bilinear', scale_factor=2),
@@ -95,14 +95,14 @@ model = dict(
         in_channels=256,
         conv_out_channels=256,
         fc_out_channels=1024,
-        num_classes=80,
+        num_classes=4,
         score_use_sigmoid=True,
         norm_cfg=dict(type='LN2d'),
         loss_iou=dict(type='MSELoss', loss_weight=0.5 * num_dec_layer * lambda_2)),
     query_head=dict(
         type='CoDINOHead',
         num_query=1500,
-        num_classes=80,
+        num_classes=4,
         num_feature_levels=5,
         in_channels=2048,
         sync_cls_avg_factor=True,
@@ -180,7 +180,7 @@ model = dict(
             conv_out_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=80,
+            num_classes=4,
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[0., 0., 0., 0.],
@@ -193,7 +193,7 @@ model = dict(
             loss_bbox=dict(type='GIoULoss', loss_weight=10.0 * num_dec_layer * lambda_2)))],
     bbox_head=[dict(
         type='CoATSSHead',
-        num_classes=80,
+        num_classes=4,
         in_channels=256,
         stacked_convs=1,
         feat_channels=256,
@@ -395,13 +395,40 @@ test_pipeline = [
         ])
 ]
 
+# data = dict(
+#     samples_per_gpu=1,
+#     workers_per_gpu=1,
+#     train=dict(filter_empty_gt=False, pipeline=train_pipeline),
+#     val=dict(pipeline=test_pipeline),
+#     test=dict(pipeline=test_pipeline))
+
+data_root = '/kaggle/input/andriod-data/android/'
+dataset_type = 'CocoDataset'
+classes = ('person', 'container', 'box', 'shelf')
+
 data = dict(
     samples_per_gpu=1,
-    workers_per_gpu=1,
-    train=dict(filter_empty_gt=False, pipeline=train_pipeline),
-    val=dict(pipeline=test_pipeline),
-    test=dict(pipeline=test_pipeline))
-
+    workers_per_gpu=0,
+    train=dict(
+        classes=classes,
+        filter_empty_gt=False, 
+        type=dataset_type,
+        ann_file=data_root + 'annotations/instances_train2017.json',
+        img_prefix=data_root + 'train2017/',
+        pipeline=train_pipeline),
+    val=dict(
+        classes=classes,
+        type=dataset_type,
+        ann_file=data_root + 'annotations/instances_val2017.json',
+        img_prefix=data_root + 'val2017/',
+        pipeline=test_pipeline),
+    test=dict(
+        classes=classes,
+        type=dataset_type,
+        ann_file=data_root + 'annotations/instances_val2017.json',
+        img_prefix=data_root + 'val2017/',
+        pipeline=test_pipeline)
+)
 evaluation = dict(metric='bbox')
 
 # learning policy

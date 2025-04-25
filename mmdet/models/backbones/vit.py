@@ -489,7 +489,8 @@ class ViT(BaseModule):
         out_feature="last_feat",
         xattn=False,
         pretrained=None,
-        init_cfg=None
+        init_cfg=None,
+        freeze_entire_backbone=False
     ):
         """
         Args:
@@ -514,7 +515,9 @@ class ViT(BaseModule):
             pretrain_img_size (int): input image size for pretraining models.
             pretrain_use_cls_token (bool): If True, pretrainig models use class token.
             out_feature (str): name of the feature from the last block.
+            freeze_entire_backbone (str): whether to freeze entire backbone or not.
         """
+        self.freeze_entire_backbone = freeze_entire_backbone
         assert not (init_cfg and pretrained), \
             'init_cfg and pretrained cannot be specified at the same time'
         if isinstance(pretrained, str):
@@ -682,7 +685,19 @@ class ViT(BaseModule):
             # load state_dict
             msg = self.load_state_dict(state_dict, False)
             logger.info(msg)
+    
+    def _freeze_all(self):
+        if self.freeze_entire_backbone:
+            self.patch_embed.eval()
+            self.out_norm.eval()
 
+            for blk in self.blocks:
+                blk.eval()
+                for param in blk.parameters():
+                    param.requires_grad = False
+
+    def train(self, mode=True):
+        super(ViT, self).train(mode)
 
     def forward(self, x):
         x = self.patch_embed(x)

@@ -467,3 +467,4 @@ custom_hooks = [
 
 evaluation = dict(metric=['bbox', 'segm'])
 
+find_unused_parameters = True

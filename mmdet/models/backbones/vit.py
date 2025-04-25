@@ -698,6 +698,7 @@ class ViT(BaseModule):
 
     def train(self, mode=True):
         super(ViT, self).train(mode)
+        self._freeze_all()
 
     def forward(self, x):
         x = self.patch_embed(x)
